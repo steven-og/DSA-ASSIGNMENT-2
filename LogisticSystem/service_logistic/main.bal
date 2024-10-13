@@ -1,9 +1,15 @@
 import ballerinax/kafka;
 import ballerina/sql;
 import ballerinax/mysql;
+import ballerinax/mysql.driver as _;
 import ballerina/http;
 import ballerina/io;
 import ballerina/random;
+
+listener kafka:Listener logisticConsumer = check new(kafka:DEFAULT_URL, {
+    groupId: "logistic-delivery-group",
+    topics: "confirmationShipment"
+});
 
 type Customer record {
     int id;
@@ -22,6 +28,17 @@ type Shipment record {
     string firstName;
     string lastName;
 };
+
+type Confirmation record {
+    string confirmationId;
+    string shipmentType;
+    string pickupLocation;
+    string deliveryLocation;
+    string estimatedDeliveryTime;
+    string status;
+};
+
+
 
 service /logistic on new http:Listener(9090) {
     private final mysql:Client db;
@@ -44,5 +61,22 @@ service /logistic on new http:Listener(9090) {
 
         io:println("Shipment confirmed");
         return string packageId: ${tracking_number};
+    }
+}
+
+service on logisticConsumer {
+
+    private final mysql:Client db;
+
+    function init() returns error? {
+        self.db = check new("localhost", "root", "password", "logistics_db",3306);
+    }
+    remote function onConsumerRecord(Confirmation[] recieved ) returns error? {
+        foreach Confirmation shipment in recieved {
+            sql:ParameterizedQuery check_shipments = `UPDATE Shipments SET status = "Confirmed" WHERE tracking_number = ${shipment.confirmationId}`;
+            sql:ExecutionResult _ = check self.db->execute(check_shipments);
+            io:println("Shipment confirmed");
+            
+        }
     }
 }
