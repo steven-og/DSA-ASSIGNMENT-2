@@ -38,3 +38,23 @@ type Confirmation record {
     string estimatedDeliveryTime;
     string status;
 };
+
+
+service on expressConsumer {
+ remote function onConsumerRecord(Shipment[] request) returns error? {
+        foreach Shipment shipment_details in request {
+            Confirmation confirmation = {
+                confirmationId: shipment_details.trackingNumber,
+                shipmentType: shipment_details.shipmentType,
+                pickupLocation: shipment_details.pickupLocation,
+                deliveryLocation: shipment_details.deliveryLocation,
+                estimatedDeliveryTime: "1 days",
+                status: "Confirmed"
+            };
+            io:println(confirmation.confirmationId);
+            check confirmationProducer->send({topic: "confirmationShipment", value: confirmation});
+
+            io:println(shipment_details.firstName + " " + shipment_details.lastName + " " + shipment_details.contactNumber + " " + shipment_details.trackingNumber);
+        }
+    }
+}
