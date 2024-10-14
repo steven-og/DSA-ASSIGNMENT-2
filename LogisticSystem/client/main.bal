@@ -32,9 +32,9 @@ http:Client http_client = check new ("localhost:9090/logistic");
 
 public function main() returns error? {
     io:println("Shipment type:");
-    io:println("1. Standard Delivery");
-    io:println("2. Express Delivery");
-    io:println("3. International Delivery");
+    io:println("1. Standard Delivery: ");
+    io:println("2. Express Delivery: ");
+    io:println("3. International Delivery: ");
     string choice = io:readln("Enter Shipment type Choice: ");
     Shipment request = {
         firstName: "",
